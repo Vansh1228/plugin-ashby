@@ -19,6 +19,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
+import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -31,6 +32,7 @@ public abstract class AbstractAshbyConnection extends Task {
         title = "The Ashby API Base URL",
         description = "Defaults to https://api.ashbyhq.com"
     )
+    @PluginProperty(dynamic = true)
     protected Property<String> baseUrl;
 
     @Schema(
@@ -38,13 +40,14 @@ public abstract class AbstractAshbyConnection extends Task {
         description = "Used for HTTP Basic Authentication. Provided by Ashby."
     )
     @PluginProperty(secret = true, group = "connection")
+    @NotNull
     @ToString.Exclude
     protected Property<String> apiKey;
 
     protected <RES> HttpResponse<RES> request(RunContext runContext, String method, String relativePath, java.util.Map<String, Object> body, Class<RES> responseType)
         throws HttpClientException, IllegalVariableEvaluationException {
         
-        String renderedBaseUrl = this.baseUrl == null ? "https://api.ashbyhq.com" : runContext.render(this.baseUrl).as(String.class).orElse("https://api.ashbyhq.com");
+        String rBaseUrl = this.baseUrl == null ? "https://api.ashbyhq.com" : runContext.render(this.baseUrl).as(String.class).orElse("https://api.ashbyhq.com");
         
         HttpConfiguration httpConfiguration = HttpConfiguration.builder()
             .auth(BasicAuthConfiguration.builder().username(this.apiKey).password(null).build())
@@ -52,7 +55,7 @@ public abstract class AbstractAshbyConnection extends Task {
             
         HttpRequest.HttpRequestBuilder requestBuilder = HttpRequest.builder()
             .method(method)
-            .uri(URI.create(renderedBaseUrl + relativePath))
+            .uri(URI.create(rBaseUrl + relativePath))
             .addHeader("Content-Type", "application/json")
             .addHeader("Accept", "application/json");
             
